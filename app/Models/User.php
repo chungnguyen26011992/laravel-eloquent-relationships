@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Role;
+use App\Models\Phone;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -41,7 +41,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function role() {
-        return $this->hasOne(Role::class);
+    public function phone() {
+        return $this->hasOne(Phone::class, 'user_id', 'id');
     }
 }

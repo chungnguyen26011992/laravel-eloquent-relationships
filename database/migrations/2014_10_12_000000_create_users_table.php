@@ -20,8 +20,6 @@ class CreateUsersTable extends Migration
             $table->string('name')->nullable();
             $table->integer('order')->default(0);
             $table->integer('status')->default(0);
-            $table->unsignedBigInteger('role_id');
-            $table->foreign('role_id')->references('id')->on('roles');
             $table->rememberToken();
             $table->timestamps();
         });
