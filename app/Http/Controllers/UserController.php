@@ -11,4 +11,9 @@ class UserController extends Controller
         $phone = User::find($id)->phone;
         return $phone;
     }
+
+    public function getPostsOfUser($id, Request $request) {
+        $posts = User::find($id)->posts;
+        return $posts;
+    }
 }

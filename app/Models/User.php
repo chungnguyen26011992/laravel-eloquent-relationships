@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Post;
 use App\Models\Phone;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -43,5 +44,9 @@ class User extends Authenticatable
 
     public function phone() {
         return $this->hasOne(Phone::class, 'user_id', 'id');
+    }
+
+    public function posts() {
+        return $this->hasMany(Post::class, 'author_id', 'id');
     }
 }
