@@ -27,6 +27,7 @@ class ProductsTableSeeder extends Seeder
             $product->order = 1;
             $product->status = 1;
             $product->save();
+            $product->categories()->sync([1, 2, 3]);
         }
     }
 }
