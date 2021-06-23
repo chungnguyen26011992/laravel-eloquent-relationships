@@ -81,10 +81,36 @@ class User extends Authenticatable
 }
 ```
 
-Eloquent sẽ tự động xác định cột `foreign_key` cho `Model Comment`. 
+Eloquent sẽ tự động xác định cột `foreign_key` cho `Model Post`. Theo quy ước, Eloquent sẽ lấy tên theo `snake case` của parent model và nối với `_id`. Trong trường hợp trên, Eloquent sẽ có cột `foreign_key` trên `Model Post` là `user_id`.
 
-Eloquent sẽ tự động lấy `foreign_key` thông qua tên lớp. Trong trường hợp này `Phone` model có `foreign_key` là `user_id`. Nếu trong database bảng `phones` của chúng ta có khóa ngoại liên kết đến bảng users không phải là `user_id` mà là một trường khác ví dụ `user_fk_id` thì chúng ta sẽ ghi đè khóa ngoại đó vào đối số thứ 2 của hàm `phone`
+Giống như phương thức `hasOne`, bạn cũng có thể ghi đè các `foreign_key` và `local_key` bằng cách chuyển các đối số bổ sung cho phương thức `hasMany`:
+```php
+return $this->hasMany(Post::class, 'foreign_key');
+return $this->hasMany(Post::class, 'foreign_key', 'local_key');
+```
 
-Remember, Eloquent will automatically determine the proper foreign key column for the Comment model. By convention, Eloquent will take the "snake case" name of the parent model and suffix it with _id. So, in this example, Eloquent will assume the foreign key column on the Comment model is post_id.
+## Xác định nghịch đảo của mối quan hệ
+Ở phần trên chúng ta đang truy xuất dữ liệu `Model Post` thông qua `Model User`. Còn phần này chúng ta sẽ truy xuất dữ liệu `Model User` thông qua `Model Post`
 
-Hãy nhớ rằng, Eloquent sẽ tự động xác định cột khóa ngoại thích hợp cho mô hình Nhận xét. Theo quy ước, Eloquent sẽ lấy tên "trường hợp con rắn" của mô hình mẹ và tiếp nối nó với _id. Vì vậy, trong ví dụ này, Eloquent sẽ giả sử cột khóa ngoại trên mô hình Comment là post_id.
+Now that we can access all of a post's comments, let's define a relationship to allow a comment to access its parent post. To define the inverse of a hasMany relationship, define a relationship method on the child model which calls the belongsTo method:
+
+Bây giờ chúng ta có thể truy cập tất cả các nhận xét của một bài đăng, hãy xác định mối quan hệ để cho phép một nhận xét truy cập vào bài đăng chính của nó. Để xác định nghịch đảo của một mối quan hệ hasMany, hãy xác định một phương thức quan hệ trên mô hình con gọi phương thức Thuộc về:
+```php
+// app/Models/Post.php
+<?php
+
+namespace App\Models;
+
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
+
+class Post extends Model
+{
+    ...
+    public function user() {
+        return $this->belongsTo(User::class, 'author_id');
+    }
+}
+
+```
+
