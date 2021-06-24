@@ -25,10 +25,12 @@ class User extends Authenticatable
 
 Sau khi khai báo xong, chúng ta có thể lấy tất cả các bài viết của user bằng cách
 ```php
+use App\Models\User;
+
 User::find(1)->posts;
 ```
 
-Để có thể nhìn trực quan dữ liệu, chúng ta có thể tạo 1 `UserController` có phương thức `getPostsOfUser` để lấy ra số điện thoại của 1 người dùng bất kỳ
+Để có thể nhìn trực quan dữ liệu, chúng ta có thể tạo 1 `UserController` có phương thức `getPostsOfUser` để lấy ra tất cả các bài viết của user
 ```php
 // app/Http/Controllers/UserController.php
 <?php
@@ -59,7 +61,7 @@ use App\Http\Controllers\UserController;
 Route::get('/users/{id}/posts', [UserController::class, 'getPostsOfUser']);
 ```
 
-Tiếp theo ta truy cập vào đường dẫn `{domain}/users/1/posts` để nhìn thấy thông tin số điện thoại của người dùng đó
+Tiếp theo ta truy cập vào đường dẫn `{domain}/users/1/posts` để nhìn thấy tất cả các bài viết của user đó
 ![image](./images_tutorial/get-phone-of-user.png)
 
 Xem xét phương thức `posts` bên trong file `app/Models/User.php`
@@ -90,11 +92,7 @@ return $this->hasMany(Post::class, 'foreign_key', 'local_key');
 ```
 
 ## Xác định nghịch đảo của mối quan hệ
-Ở phần trên chúng ta đang truy xuất dữ liệu `Model Post` thông qua `Model User`. Còn phần này chúng ta sẽ truy xuất dữ liệu `Model User` thông qua `Model Post`
-
-Now that we can access all of a post's comments, let's define a relationship to allow a comment to access its parent post. To define the inverse of a hasMany relationship, define a relationship method on the child model which calls the belongsTo method:
-
-Bây giờ chúng ta có thể truy cập tất cả các nhận xét của một bài đăng, hãy xác định mối quan hệ để cho phép một nhận xét truy cập vào bài đăng chính của nó. Để xác định nghịch đảo của một mối quan hệ hasMany, hãy xác định một phương thức quan hệ trên mô hình con gọi phương thức Thuộc về:
+Ở phần trên chúng ta đang truy xuất dữ liệu `Model Post` thông qua `Model User`. Còn phần này chúng ta sẽ truy xuất dữ liệu `Model User` thông qua `Model Post`. Để xác định nghịch đảo của mối quan hệ `hasMany`, chúng ta dùng một phương thức quan hệ trên model con là `belongsTo`.
 ```php
 // app/Models/Post.php
 <?php
@@ -111,6 +109,89 @@ class Post extends Model
         return $this->belongsTo(User::class, 'author_id');
     }
 }
+```
+
+Sau khi khai báo xong, chúng ta có thể lấy thông tin của user thông qua bài viết bằng cách
+```php
+use App\Models\Post;
+
+Post::find(1)->user;
+```
+
+Để có thể nhìn trực quan dữ liệu, chúng ta có thể tạo 1 `PostController` có phương thức `getUserByPost` để lấy ra thông tin của user thông qua bài viết
+```php
+// app/Http/Controllers/PostController.php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Post;
+use Illuminate\Http\Request;
+
+class PostController extends Controller
+{
+    ...
+    public function getUserByPost($id, Request $request) {
+        $user = Post::find($id)->user;
+        return $user;
+    }
+}
 
 ```
 
+Tiếp theo, ta định nghĩa 1 route để có thể truy cập thông qua trình duyệt
+```php
+// routes/web.php
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PostController;
+
+Route::get('/posts/{id}/user', [PostController::class, 'getUserByPost']);
+```
+
+Tiếp theo ta truy cập vào đường dẫn `{domain}/users/1/posts` để nhìn thấy tất cả các bài viết của user đó
+![image](./images_tutorial/get-phone-of-user.png)
+
+Xem xét phương thức `user` bên trong file `app/Models/Post.php`
+```php
+// app/Models/Post.php
+<?php
+
+namespace App\Models;
+
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
+
+class Post extends Model
+{
+    ...
+    public function user() {
+        return $this->belongsTo(User::class, 'author_id');
+    }
+}
+```
+Eloquent xác định tên `foreign key` bằng cách kiểm tra tên của phương thức quan hệ và nối với dấu "_" và theo sau đó là tên khoá chính. Vì vậy, trong ví dụ này, `foreign key` của `Model User` sẽ là `user_id`.
+
+Tuy nhiên, nếu khóa ngoại cho mối quan hệ của bạn không tuân theo các quy ước này, bạn có thể chuyển tên khóa ngoại tùy chỉnh làm đối số thứ hai cho phương thức `belongsTo`:
+```php
+public function user() {
+    return $this->belongsTo(User::class, 'foreign_key');
+}
+```
+
+Nếu `parent model` không sử dụng `id` là `primary key`, hoặc bạn muốn sử dụng 1 cột khác, bạn có thể tuỳ chỉnh tham số thứ ba cho phương thức `belongsTo`.
+```php
+public function user() {
+    return $this->belongsTo(User::class, 'foreign_key', 'owner_key');
+}
+```
+
+# Kiểu quan hệ Nhiều - Nhiều (Many To Many)
+Để định nghĩa quan hệ nhiều-nhiều chúng ta cần 1 bảng trung gian ở giữa 2 bảng chính để làm cầu nối. Biến mối quan hệ nhiều-nhiều của 2 bảng chính thành mối quan hệ một-nhiều thông qua bảng con.
+
+Ví dụ: Chúng ta có 2 bảng `Category` và `Product`. Một `category` chứa nhiều `product` và một `product` có thể thuộc nhiều `category`, vì điều này dẫn đến bảng `Category` và bảng `Product` có quan hệ nhiều-nhiều với nhau. Để định nghĩa mối quan hệ này chúng ta cần tạo 1 bảng trung gian là bảng `category_product`
+
+To define this relationship, three database tables are needed: users, roles, and role_user. The role_user table is derived from the alphabetical order of the related model names and contains user_id and role_id columns. This table is used as an intermediate table linking the users and roles.
+
+Để xác định mối quan hệ này, cần có ba bảng cơ sở dữ liệu: người dùng, vai trò và người dùng vai trò. Bảng role_user có nguồn gốc từ thứ tự bảng chữ cái của tên mô hình có liên quan và chứa các cột user_id và role_id. Bảng này được sử dụng như một bảng trung gian liên kết người dùng và vai trò.
