@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    public function getProductByCategory($id, Request $request) {
+    public function getProductsByCategory($id, Request $request) {
         $products = Category::find($id)->products;
         return $products;
     }

@@ -192,6 +192,215 @@ public function user() {
 
 Ví dụ: Chúng ta có 2 bảng `Category` và `Product`. Một `category` chứa nhiều `product` và một `product` có thể thuộc nhiều `category`, vì điều này dẫn đến bảng `Category` và bảng `Product` có quan hệ nhiều-nhiều với nhau. Để định nghĩa mối quan hệ này chúng ta cần tạo 1 bảng trung gian là bảng `category_product`
 
-To define this relationship, three database tables are needed: users, roles, and role_user. The role_user table is derived from the alphabetical order of the related model names and contains user_id and role_id columns. This table is used as an intermediate table linking the users and roles.
+## Cấu trúc bảng
+Trước khi đi vào chi tiết thì chúng ta sẽ xem qua cấu trúc của 3 bảng `categories`, `products` và `category_product`.
+```php
+// categories_table
+<?php
 
-Để xác định mối quan hệ này, cần có ba bảng cơ sở dữ liệu: người dùng, vai trò và người dùng vai trò. Bảng role_user có nguồn gốc từ thứ tự bảng chữ cái của tên mô hình có liên quan và chứa các cột user_id và role_id. Bảng này được sử dụng như một bảng trung gian liên kết người dùng và vai trò.
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateCategoriesTables extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug')->unique();
+            $table->integer('parent_id')->default(0);
+            $table->integer('order')->default(0);
+            $table->integer('status')->default(0);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('categories');
+    }
+}
+```
+
+```php
+// products_table
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateProductsTable extends Migration
+{
+	/**
+	 * Run the migrations.
+	 *
+	 * @return void
+	 */
+	public function up()
+	{
+		Schema::create('products', function(Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug')->unique();
+            $table->text('description')->nullable();
+            $table->double('price');
+            $table->integer('order');
+            $table->integer('status');
+            $table->timestamps();
+		});
+	}
+
+	/**
+	 * Reverse the migrations.
+	 *
+	 * @return void
+	 */
+	public function down()
+	{
+		Schema::dropIfExists('products');
+	}
+}
+```
+
+```php
+// category_product_table
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateCategoryProductTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('category_product', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('category_id');
+            $table->foreign('category_id')->references('id')->on('categories');
+            $table->unsignedBigInteger('product_id');
+            $table->foreign('product_id')->references('id')->on('products');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('category_product');
+    }
+}
+```
+
+## Cấu trúc Model
+Để định nghĩa quan hệ nhiều-nhiều thì chúng ta cần sử dụng phương thức `belongsToMany` cho 2 bảng chính là `categories` và `products` có Model tương ứng là `Category` và `Product`. Do bảng `category_product` là bảng phụ nên chúng ta không cần tạo Model cho bảng này.
+
+```php
+// App\Models\Category
+<?php
+
+namespace App\Models;
+
+use App\Models\Product;
+use Illuminate\Database\Eloquent\Model;
+
+class Category extends Model
+{
+    ...
+    public function products() {
+        return $this->belongsToMany(Product::class, 'category_product', 'category_id', 'product_id');
+    }
+}
+```
+
+```php
+// App\Models\Product
+<?php
+
+namespace App\Models;
+
+use App\Models\Category;
+use Illuminate\Database\Eloquent\Model;
+
+class Product extends Model
+{
+    public function categories() {
+        return $this->belongsToMany(Category::class, 'category_product', 'category_id', 'product_id');
+    }
+}
+```
+
+Sau khi khai báo xong, chúng ta có thể lấy tất cả các product của category bằng cách
+```php
+use App\Models\Category;
+
+Category::find(1)->products;
+```
+
+Tương tự chúng ta cũng có thể lấy tất cả các category của product bằng cách
+```php
+use App\Models\Product;
+
+Product::find(1)->categories;
+```
+
+Để có thể nhìn trực quan dữ liệu, chúng ta có thể tạo 1 `CategoryController` có phương thức `getProductsByCategory` để lấy ra tất cả các product của category
+```php
+// app/Http/Controllers/CategoryController.php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Category;
+use Illuminate\Http\Request;
+
+class CategoryController extends Controller
+{
+    ...
+    public function getProductsByCategory($id, Request $request) {
+        $products = Category::find($id)->products;
+        return $products;
+    }
+}
+```
+
+Tương tự, chúng ta cũng tạo 1 `ProductController` có phương thức `getCategoriesByProduct` để lấy ra tất cả các category của product
+```php
+// app/Http/Controllers/ProductController.php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Product;
+use Illuminate\Http\Request;
+
+class ProductController extends Controller
+{
+    public function getCategoriesByProduct($id, Request $request) {
+        $categories = Product::find($id)->categories;
+        return $categories;
+    }
+}
+```
