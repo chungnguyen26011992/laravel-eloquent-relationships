@@ -404,3 +404,55 @@ class ProductController extends Controller
     }
 }
 ```
+
+Tiếp theo, ta định nghĩa 2 route để có thể truy cập thông qua trình duyệt
+```php
+// routes/web.php
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PostController;
+
+Route::get('/categories/{id}/products', [CategoryController::class, 'getProductsByCategory']);
+Route::get('/products/{id}/categories', [ProductController::class, 'getCategoriesByProduct']);
+```
+
+Tiếp theo ta truy cập vào đường dẫn `{domain}/categories/1/products` để nhìn thấy tất cả các product của category
+![image](./images_tutorial/get-phone-of-user.png)
+
+Tiếp theo ta truy cập vào đường dẫn `{domain}/products/1/categories` để nhìn thấy tất cả các category của product
+![image](./images_tutorial/get-phone-of-user.png)
+
+Xem xét phương thức `products` bên trong file `app/Models/Category.php`
+```php
+// app/Models/Category.php
+<?php
+
+namespace App\Models;
+
+use App\Models\Product;
+use Illuminate\Database\Eloquent\Model;
+
+class Category extends Model
+{
+   ...
+    public function products() {
+        return $this->belongsToMany(Product::class, 'category_product', 'category_id', 'product_id');
+    }
+}
+```
+
+Để xác định tên bảng của bảng trung gian của mối quan hệ, Eloquent sẽ nối hai tên mô hình có liên quan theo thứ tự bảng chữ cái. Tuy nhiên, bạn có thể tự do ghi đè quy ước này. Bạn có thể làm như vậy bằng cách truyền một đối số thứ hai vào phương thức `belongsToMany`:
+```php
+return $this->belongsToMany(Product::class, 'category_product');
+```
+
+Ngoài việc tùy chỉnh tên của bảng trung gian, bạn cũng có thể tùy chỉnh tên cột của các khóa trên bảng bằng cách chuyển các đối số bổ sung cho phương thức `belongsToMany`. Đối số thứ ba là tên khóa ngoại của mô hình mà bạn đang xác định mối quan hệ, trong khi đối số thứ tư là tên khóa ngoại của mô hình mà bạn đang tham gia:
+```php
+return $this->belongsToMany(Product::class, 'category_product', 'category_id', 'product_id');
+```
+
+## Xác định nghịch đảo của mối quan hệ
+To define the "inverse" of a many-to-many relationship, you should define a method on the related model which also returns the result of the belongsToMany method. To complete our user / role example, let's define the users method on the Role model:
+
+Để xác định "nghịch đảo" của một mối quan hệ nhiều-nhiều, bạn nên xác định một phương thức trên mô hình liên quan, phương thức này cũng trả về kết quả của phương thức Thuộc vềToMany. Để hoàn thành ví dụ về người dùng / vai trò của chúng tôi, hãy xác định phương thức người dùng trên mô hình Vai trò:
