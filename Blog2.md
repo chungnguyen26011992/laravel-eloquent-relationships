@@ -453,6 +453,50 @@ return $this->belongsToMany(Product::class, 'category_product', 'category_id', '
 ```
 
 ## Xác định nghịch đảo của mối quan hệ
-To define the "inverse" of a many-to-many relationship, you should define a method on the related model which also returns the result of the belongsToMany method. To complete our user / role example, let's define the users method on the Role model:
+Để xác định "nghịch đảo" của một mối quan hệ nhiều-nhiều, bạn nên xác định một phương thức trên mô hình liên quan, phương thức này cũng trả về kết quả của phương thức `belongsToMany`. Để hoàn thành ví dụ về `category / product` hãy xác định phương thức `categories` trên `Model Product`:
+```php
+// app/Models/Product.php
+<?php
 
-Để xác định "nghịch đảo" của một mối quan hệ nhiều-nhiều, bạn nên xác định một phương thức trên mô hình liên quan, phương thức này cũng trả về kết quả của phương thức Thuộc vềToMany. Để hoàn thành ví dụ về người dùng / vai trò của chúng tôi, hãy xác định phương thức người dùng trên mô hình Vai trò:
+namespace App\Models;
+
+use App\Models\Category;
+use Illuminate\Database\Eloquent\Model;
+
+class Product extends Model
+{
+    ...
+    public function categories() {
+        return $this->belongsToMany(Category::class, 'category_product', 'category_id', 'product_id');
+    }
+}
+```
+
+Như bạn có thể thấy, mối quan hệ được định nghĩa giống hệt như `Model Category`. Vì vậy sẽ không có sự khác nhau khi nghịch đảo mối quan hệ trong phương thức `belongsToMany`.
+
+## Truy cập column trên bảng trung gian
+
+Như bạn đã biết, làm việc với quan hệ nhiều-nhiều yêu cầu sự hiện diện của một bảng trung gian. Eloquent cung cấp một số cách tương tác rất hữu ích với bảng này. Ví dụ: giả sử `Model Category` có nhiều `Model Product` liên quan. Sau khi truy cập mối quan hệ này, chúng tôi có thể truy cập bảng trung gian bằng cách sử dụng thuộc tính `pivot` trên các mô hình:
+```php
+use App\Models\Category;
+
+$category = Category::find(1);
+
+foreach ($category->products as $product) {
+    echo $product->pivot->created_at;
+}
+```
+
+Lưu ý rằng mỗi `Model Product` truy xuất được tự động gán một thuộc tính pivot. Thuộc tính này chứa một mô hình đại diện cho bảng trung gian.
+
+Nếu bảng trung gian của bạn chứa các thuộc tính bổ sung, bạn phải chỉ định chúng khi xác định mối quan hệ:
+```php
+return $this->belongsToMany(Product::class)->withPivot('active', 'created_by');
+```
+
+Nếu bạn muốn bảng trung gian của mình có thời gian timestamps `created_at` và `updated_at` được tạo tự động, hãy gọi phương thức `withTimestamps` khi xác định mối quan hệ:
+```php
+return $this->belongsToMany(Product::class)->withTimestamps();
+```
+
+## Tuỳ chỉnh tên thuộc tính pivot
