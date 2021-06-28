@@ -500,3 +500,100 @@ return $this->belongsToMany(Product::class)->withTimestamps();
 ```
 
 ## Tuỳ chỉnh tên thuộc tính pivot
+Chúng ta có thể thay đổi tên thuộc tính `pivot` thông qua phương thức `as` bên trong `Model`. Ví dụ:
+```php
+// app\Models\Category
+return $this->belongsToMany(Product::class)
+    ->as('cate_product')
+    ->withTimestamps();
+```
+
+Và ta sẽ truy xuất bảng trung gian đó bằng cách:
+```php
+$categories = Category::with('products')->get();
+
+foreach ($categories->products as $product) {
+    echo $product->cate_product->created_at;
+}
+```
+
+## Query trên bảng trung gian
+Bạn cũng có thể lọc các kết quả được trả về bởi các truy vấn mối quan hệ `belongsToMany` bằng cách sử dụng các phương thức `wherePivot`, `wherePivotIn`, `wherePivotNotIn`, `wherePivotBetween`, `wherePivotNotBetween`, `wherePivotNull`, và `wherePivotNotNull` khi xác định mối quan hệ:
+```php
+return $this->belongsToMany(Product::class)
+                ->wherePivot('approved', 1);
+
+return $this->belongsToMany(Product::class)
+                ->wherePivotIn('priority', [1, 2]);
+
+return $this->belongsToMany(Product::class)
+                ->wherePivotNotIn('priority', [1, 2]);
+
+return $this->belongsToMany(Product::class)
+                ->as('cate_product')
+                ->wherePivotBetween('created_at', ['2020-01-01 00:00:00', '2020-12-31 00:00:00']);
+
+return $this->belongsToMany(Product::class)
+                ->as('cate_product')
+                ->wherePivotNotBetween('created_at', ['2020-01-01 00:00:00', '2020-12-31 00:00:00']);
+
+return $this->belongsToMany(Product::class)
+                ->as('subscricate_productptions')
+                ->wherePivotNull('expired_at');
+
+return $this->belongsToMany(Product::class)
+                ->as('cate_product')
+                ->wherePivotNotNull('expired_at');
+```
+
+## Một số phương thức thêm dữ liệu vào bảng phụ
+### Attaching / Detaching
+Eloquent cũng cung cấp các phương pháp giúp làm việc với mối quan hệ `nhiều-nhiều` thuận tiện hơn. Ví dụ, hãy tưởng tượng một `category` có thể có nhiều `product` và một `product` có thể có nhiều `category`. Bạn có thể sử dụng phương thức `attach` để đính kèm `product` cho `category` bằng cách chèn bản ghi vào bảng trung gian của mối quan hệ:
+```php
+use App\Models\Category;
+
+$category = Category::find(1);
+
+$category->products()->attach($productId);
+```
+
+Khi đính kèm mối quan hệ với một mô hình, bạn cũng có thể chuyển một mảng dữ liệu bổ sung để chèn vào bảng trung gian:
+```php
+$category->products()->attach($productId, ['active' => $active]);
+```
+
+Đôi khi có thể cần phải xóa một `product` khỏi `categỏy`. Để xóa bản ghi mối quan hệ nhiều-nhiều, hãy sử dụng phương pháp `detach`. Phương thức `detach` sẽ xóa bản ghi thích hợp ra khỏi bảng trung gian; tuy nhiên, cả hai mô hình sẽ vẫn còn trong cơ sở dữ liệu:
+```php
+// Detach a single product from the category...
+$category->products()->detach($productId);
+
+// Detach all product from the category...
+$category->products()->detach();
+```
+
+Để thuận tiện, `attach` và `detach` cũng chấp nhận các mảng ID làm đầu vào:
+```php
+$category = Category::find(1);
+
+$category->products()->detach([1, 2, 3]);
+
+$category->products()->attach([
+    1 => ['active' => $active],
+    2 => ['active' => $active],
+]);
+```
+
+### Syncing Associations
+Bạn cũng có thể sử dụng phương thức `sync` trong mối quan hệ `nhiều-nhiều`. Phương thức `sync` chấp nhận một mảng ID để đặt trên bảng trung gian. Bất kỳ ID nào không nằm trong mảng đã cho sẽ bị xóa khỏi bảng trung gian. Vì vậy, sau khi hoạt động này hoàn tất, chỉ các ID trong mảng đã cho sẽ tồn tại trong bảng trung gian:
+```php
+$category->products()->sync([1, 2, 3]);
+```
+
+Bạn cũng có thể chuyển các giá trị bảng trung gian bổ sung với các ID:
+```php
+$category->products()->sync([1 => ['active' => true], 2, 3]);
+```
+
+Nếu bạn muốn chèn các giá trị bảng trung gian giống nhau với mỗi ID mô hình được đồng bộ hóa, bạn có thể sử dụng phương thức syncWithPivotValues:
+
+If you would like to insert the same intermediate table values with each of the synced model IDs, you may use the syncWithPivotValues method:
