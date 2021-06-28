@@ -330,7 +330,7 @@ class Category extends Model
 {
     ...
     public function products() {
-        return $this->belongsToMany(Product::class, 'category_product', 'category_id', 'product_id');
+        return $this->belongsToMany(Product::class, 'category_product', 'product_id', 'category_id');
     }
 }
 ```
@@ -347,7 +347,7 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     public function categories() {
-        return $this->belongsToMany(Category::class, 'category_product', 'category_id', 'product_id');
+        return $this->belongsToMany(Category::class, 'category_product', 'product_id', 'category_id');
     }
 }
 ```
@@ -437,7 +437,7 @@ class Category extends Model
 {
    ...
     public function products() {
-        return $this->belongsToMany(Product::class, 'category_product', 'category_id', 'product_id');
+        return $this->belongsToMany(Product::class, 'category_product', 'product_id', 'category_id');
     }
 }
 ```
@@ -449,7 +449,7 @@ return $this->belongsToMany(Product::class, 'category_product');
 
 Ngoài việc tùy chỉnh tên của bảng trung gian, bạn cũng có thể tùy chỉnh tên cột của các khóa trên bảng bằng cách chuyển các đối số bổ sung cho phương thức `belongsToMany`. Đối số thứ ba là tên khóa ngoại của mô hình mà bạn đang xác định mối quan hệ, trong khi đối số thứ tư là tên khóa ngoại của mô hình mà bạn đang tham gia:
 ```php
-return $this->belongsToMany(Product::class, 'category_product', 'category_id', 'product_id');
+return $this->belongsToMany(Product::class, 'category_product', 'product_id', 'category_id');
 ```
 
 ## Xác định nghịch đảo của mối quan hệ
@@ -467,7 +467,7 @@ class Product extends Model
 {
     ...
     public function categories() {
-        return $this->belongsToMany(Category::class, 'category_product', 'category_id', 'product_id');
+        return $this->belongsToMany(Category::class, 'category_product', 'product_id', 'category_id');
     }
 }
 ```
@@ -594,6 +594,18 @@ Bạn cũng có thể chuyển các giá trị bảng trung gian bổ sung với
 $category->products()->sync([1 => ['active' => true], 2, 3]);
 ```
 
-Nếu bạn muốn chèn các giá trị bảng trung gian giống nhau với mỗi ID mô hình được đồng bộ hóa, bạn có thể sử dụng phương thức syncWithPivotValues:
+Nếu bạn muốn chèn các giá trị bảng trung gian giống nhau với mỗi ID mô hình được đồng bộ hóa, bạn có thể sử dụng phương thức `syncWithPivotValues`:
+```php
+$category->products()->syncWithPivotValues([1, 2, 3], ['active' => true]);
+```
 
-If you would like to insert the same intermediate table values with each of the synced model IDs, you may use the syncWithPivotValues method:
+Nếu bạn không muốn tách các ID hiện có bị thiếu khỏi mảng đã cho, bạn có thể sử dụng phương pháp `syncWithoutDetaching`:
+```php
+$category->products()->syncWithoutDetaching([1, 2, 3]);
+```
+
+### Toggling Associations
+Mối quan hệ `nhiều-nhiều` cũng cung cấp một phương thức chuyển đổi để "chuyển đổi" trạng thái đính kèm của các ID mô hình có liên quan đã cho. Nếu ID đã cho hiện đang được đính kèm, nó sẽ bị tách ra. Tương tự như vậy, nếu nó hiện đang được tách ra, nó sẽ được đính kèm:
+```php
+$category->products()->toggle([1, 2, 3]);
+```
