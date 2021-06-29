@@ -62,7 +62,7 @@ Route::get('/users/{id}/posts', [UserController::class, 'getPostsOfUser']);
 ```
 
 Tiếp theo ta truy cập vào đường dẫn `{domain}/users/1/posts` để nhìn thấy tất cả các bài viết của user đó
-![image](./images_tutorial/get-phone-of-user.png)
+![image](./images_tutorial/get-posts-of-user2.png)
 
 Xem xét phương thức `posts` bên trong file `app/Models/User.php`
 ```php
@@ -150,8 +150,8 @@ use App\Http\Controllers\PostController;
 Route::get('/posts/{id}/user', [PostController::class, 'getUserByPost']);
 ```
 
-Tiếp theo ta truy cập vào đường dẫn `{domain}/users/1/posts` để nhìn thấy tất cả các bài viết của user đó
-![image](./images_tutorial/get-phone-of-user.png)
+Tiếp theo ta truy cập vào đường dẫn `{domain}/users/1/posts` để nhìn thấy thông tin tác giả của bài viết đó
+![image](./images_tutorial/get-user-of-post.png)
 
 Xem xét phương thức `user` bên trong file `app/Models/Post.php`
 ```php
@@ -418,10 +418,10 @@ Route::get('/products/{id}/categories', [ProductController::class, 'getCategorie
 ```
 
 Tiếp theo ta truy cập vào đường dẫn `{domain}/categories/1/products` để nhìn thấy tất cả các product của category
-![image](./images_tutorial/get-phone-of-user.png)
+![image](./images_tutorial/get-products-of-category.png)
 
 Tiếp theo ta truy cập vào đường dẫn `{domain}/products/1/categories` để nhìn thấy tất cả các category của product
-![image](./images_tutorial/get-phone-of-user.png)
+![image](./images_tutorial/get-categories-of-product.png)
 
 Xem xét phương thức `products` bên trong file `app/Models/Category.php`
 ```php
@@ -609,3 +609,5 @@ Mối quan hệ `nhiều-nhiều` cũng cung cấp một phương thức chuyể
 ```php
 $category->products()->toggle([1, 2, 3]);
 ```
+
+#### Source code tham khảo tại: https://github.com/chung-nguyen-tda/laravel-eloquent-relationships
