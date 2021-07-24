@@ -11,4 +11,9 @@ class PostController extends Controller
         $user = Post::find($id)->user;
         return $user;
     }
+
+    public function getImageOfPost($id, Request $request) {
+        $image = Post::find($id)->image;
+        return $image;
+    }
 }

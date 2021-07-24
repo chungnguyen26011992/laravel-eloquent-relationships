@@ -1,17 +1,25 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Database\Seeders;
 
 use App\Models\Post;
 use App\Models\User;
 use App\Models\Image;
-use Illuminate\Http\Request;
+use Illuminate\Database\Seeder;
 
-class UserController extends Controller
+class ImagesTableSeeder extends Seeder
 {
-    public function index(Request $request) {
+    /**
+     * Run the database seeds.
+     *
+     * @return void
+     */
+    public function run()
+    {
         $users = User::get();
         $posts = Post::get();
+        Image::truncate();
+
         foreach ($users as $user) {
             $width = mt_rand(300, 800);
             $height = mt_rand(300, 800);
@@ -31,16 +39,5 @@ class UserController extends Controller
                 'imageable_type' => Post::class,
             ]);
         }
-        return $users;
-    }
-
-    public function getPhoneOfUser($id, Request $request) {
-        $phone = User::find($id)->phone;
-        return $phone;
-    }
-
-    public function getPostsOfUser($id, Request $request) {
-        $posts = User::find($id)->posts;
-        return $posts;
     }
 }

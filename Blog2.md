@@ -1,5 +1,5 @@
 # Các kiểu quan hệ giữa các bảng trong Laravel phần 2
-Chào các bạn, bài này là phần 2 trong series 3 phần về các kiểu quan hệ trong Laravel. Trong bài này chúng ta sẽ đề cập đến kiểu quan hệ `Một - Nhiều`, `Nhiều - Nhiều`.
+Chào các bạn, bài này là phần 2 trong series 4 phần về các kiểu quan hệ trong Laravel. Trong bài này chúng ta sẽ đề cập đến kiểu quan hệ `Một - Nhiều`, `Nhiều - Nhiều`.
 
 # Kiểu quan hệ Một - Nhiều (One To Many)
 Kiểu quan hệ `Một - Nhiều` được sử dụng để định nghĩa 1 model cha có 1 hoặc nhiều model con. Ví dụ 1 người dùng (`user`) có nhiều bài viết (`post`). Để biểu thị mối quan hệ này chúng ta làm như sau: 
@@ -136,7 +136,6 @@ class PostController extends Controller
         return $user;
     }
 }
-
 ```
 
 Tiếp theo, ta định nghĩa 1 route để có thể truy cập thông qua trình duyệt
@@ -475,7 +474,6 @@ class Product extends Model
 Như bạn có thể thấy, mối quan hệ được định nghĩa giống hệt như `Model Category`. Vì vậy sẽ không có sự khác nhau khi nghịch đảo mối quan hệ trong phương thức `belongsToMany`.
 
 ## Truy cập column trên bảng trung gian
-
 Như bạn đã biết, làm việc với quan hệ nhiều-nhiều yêu cầu sự hiện diện của một bảng trung gian. Eloquent cung cấp một số cách tương tác rất hữu ích với bảng này. Ví dụ: giả sử `Model Category` có nhiều `Model Product` liên quan. Sau khi truy cập mối quan hệ này, chúng tôi có thể truy cập bảng trung gian bằng cách sử dụng thuộc tính `pivot` trên các mô hình:
 ```php
 use App\Models\Category;
