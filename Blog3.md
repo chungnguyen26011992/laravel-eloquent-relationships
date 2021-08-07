@@ -165,7 +165,7 @@ Tiếp theo, ta định nghĩa 1 route để có thể truy cập thông qua tr�
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\PostController;
 
 Route::get('/posts/{id}/image', [PostController::class, 'getImageOfPost']);
 ```
@@ -184,3 +184,117 @@ $imageable = $image->imageable;
 
 Phương thức `imageable` trên `Model Image` sẽ trả về instance của `User` hoặc `Post` phụ thuộc vào loại Model nào sở hữu hình ảnh.
 
+Để có thể nhìn trực quan dữ liệu, chúng ta có thể tạo 1 `ImageController` có phương thức `getParentModelOfImage` để lấy ra Model cha của hình ảnh
+```php
+// app/Http/Controllers/ImageController.php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Image;
+use Illuminate\Http\Request;
+
+class ImageController extends Controller
+{
+    ...
+    public function getParentModelOfImage(Request $request) {
+        $image = Image::find(1);
+        $imageable = $image->imageable;
+        return $imageable;
+    }
+}
+```
+
+Tiếp theo, ta định nghĩa 1 route để có thể truy cập thông qua trình duyệt
+```php
+// routes/web.php
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ImageController;
+
+Route::get('/images/{id}/parent-model', [ImageController::class, 'getParentModelOfImage']);
+```
+
+Tiếp theo ta truy cập vào đường dẫn `{domain}/images/1/parent-model` để lấy ra parent model của hình ảnh đó
+![image](./images_tutorial/get-parent-model-of-image.png)
+
+### Thay đổi tên khoá ngoại
+Bạn có thể chỉ định tên của cột `id` và `type` được sử dụng trong mô hình con. Nếu bạn thay đổi tên của các cột thì hãy luôn chuyền tên của mối quan hệ làm đối số đầu tiên cho phương thức `morphTo`. Thông thường, giá trị này phải khớp với tên phương thức, vì vậy bạn có thể sử dụng hằng số __FUNCTION__ của PHP:
+
+```php
+/**
+ * Get the model that the image belongs to.
+ */
+public function imageable()
+{
+    return $this->morphTo(__FUNCTION__, 'imageable_type', 'imageable_id');
+}
+```
+
+## Kiểu quan hệ One To Many (Polymorphic)
+### Cấu trúc bảng
+Quan hệ đa hình một-nhiều tương tự như quan hệ một-nhiều điển hình; tuy nhiên, mô hình con có thể thuộc về nhiều loại mô hình bằng cách sử dụng một kết hợp duy nhất. 
+
+Ví dụ: Hãy tưởng tượng người dùng ứng dụng của bạn có thể "bình luận" về các bài đăng và video. Sử dụng mối quan hệ đa hình, bạn có thể sử dụng một bảng `Comment` duy nhất để chứa nhận xét cho cả bài đăng và video. Đầu tiên, hãy kiểm tra cấu trúc bảng cần thiết để xây dựng mối quan hệ này:
+```
+posts
+    id - integer
+    title - string
+    body - text
+
+videos
+    id - integer
+    title - string
+    url - string
+
+comments
+    id - integer
+    body - text
+    commentable_id - integer
+    commentable_type - string
+```
+
+### Cấu trúc Model
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Comment extends Model
+{
+    /**
+     * Get the parent commentable model (post or video).
+     */
+    public function commentable()
+    {
+        return $this->morphTo();
+    }
+}
+
+class Post extends Model
+{
+    /**
+     * Get all of the post's comments.
+     */
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+}
+
+class Video extends Model
+{
+    /**
+     * Get all of the video's comments.
+     */
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+}
+```
+
+### Truy xuất dữ liệu
