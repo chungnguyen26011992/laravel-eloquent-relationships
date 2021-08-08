@@ -18,7 +18,24 @@ class CommentsTableSeeder extends Seeder
     {
         $posts = Post::get();
         $videos = Video::get();
-
         Comment::truncate();
+
+        foreach ($posts as $post) {
+            $body = 'Comment Post ' . $post->id;
+            Comment::create([
+                'body' => $body,
+                'commentable_id' => $post->id,
+                'commentable_type' => Post::class,
+            ]);
+        }
+
+        foreach ($videos as $video) {
+            $body = 'Comment Video ' . $video->id;
+            Comment::create([
+                'body' => $body,
+                'commentable_id' => $video->id,
+                'commentable_type' => Video::class,
+            ]);
+        }
     }
 }

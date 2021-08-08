@@ -16,4 +16,9 @@ class PostController extends Controller
         $image = Post::find($id)->image;
         return $image;
     }
+
+    public function getCommentsOfPost($id, Request $request) {
+        $comments = Post::find($id)->comments;
+        return $comments;
+    }
 }

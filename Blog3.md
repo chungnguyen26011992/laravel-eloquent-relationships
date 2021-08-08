@@ -297,4 +297,171 @@ class Video extends Model
 }
 ```
 
+### Tạo dữ liệu mẫu
+Chúng ta cần tạo dữ liệu mẫu cho bảng `images` bằng cách tạo file `VideosTableSeeder` và `CommentsTableSeeder` bằng câu lệnh
+```
+php artisan make:seeder VideosTableSeeder
+php artisan make:seeder CommentsTableSeeder
+```
+
+Nội dung file VideosTableSeeder:
+```php
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Video;
+use Illuminate\Database\Seeder;
+
+class VideosTableSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     *
+     * @return void
+     */
+    public function run()
+    {
+        $videos = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $videos[] = [
+                'title' => 'Video ' . $i,
+                'url' => 'video-' . $i . '.mp4',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        Video::insert($videos);
+    }
+}
+```
+
+Nội dung file CommentsTableSeeder:
+```php
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Post;
+use App\Models\Video;
+use App\Models\Comment;
+use Illuminate\Database\Seeder;
+
+class CommentsTableSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     *
+     * @return void
+     */
+    public function run()
+    {
+        $posts = Post::get();
+        $videos = Video::get();
+        Comment::truncate();
+
+        foreach ($posts as $post) {
+            $body = 'Comment Post ' . $post->id;
+            Comment::create([
+                'body' => $body,
+                'commentable_id' => $post->id,
+                'commentable_type' => Post::class,
+            ]);
+        }
+
+        foreach ($videos as $video) {
+            $body = 'Comment Video ' . $video->id;
+            Comment::create([
+                'body' => $body,
+                'commentable_id' => $video->id,
+                'commentable_type' => Video::class,
+            ]);
+        }
+    }
+}
+```
 ### Truy xuất dữ liệu
+Khi bảng cơ sở dữ liệu và các mô hình của bạn được xác định, bạn có thể truy cập các mối quan hệ thông qua các thuộc tính mối quan hệ động của mô hình của bạn. Ví dụ: để truy cập tất cả các nhận xét cho một bài đăng, chúng tôi có thể sử dụng thuộc tính `comments`:
+```php
+use App\Models\Post;
+
+$post = Post::find(1);
+$comments = $post->comments;
+```
+
+Để có thể nhìn trực quan dữ liệu, chúng ta có thể tạo 1 `PostController` có phương thức `getCommentsOfPost` để lấy ra các nhậnn xét cho một bài đăng
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Post;
+use Illuminate\Http\Request;
+
+class PostController extends Controller
+{
+    ...
+    public function getCommentsOfPost($id, Request $request) {
+        $comments = Post::find($id)->comments;
+        return $comments;
+    }
+}
+```
+Tiếp theo, ta định nghĩa 1 route để có thể truy cập thông qua trình duyệt
+```php
+// routes/web.php
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PostController;
+
+Route::get('/posts/{id}/comments', [PostController::class, 'getCommentsOfPost']);
+```
+
+Tiếp theo ta truy cập vào đường dẫn `{domain}/posts/1/comments` để lấy ra các nhậnn xét cho bài đăng đó
+![image](./images_tutorial/get-comments-of-post.png)
+
+Bạn có thể truy xuất ngược lại model cha bằng cách truy cập vào tên của phương thức thực hiện lệnh gọi đến `morphTo`. Trong trường hợp này, đó là phương thức `commentable` trên `Model Comment`
+```php
+use App\Models\Comment;
+
+$comment = Comment::find(1);
+
+$commentable = $comment->commentable;
+```
+
+Phương thức `commentable` trên `Model Comment` sẽ trả về instance của `Post` hoặc `Video` phụ thuộc vào loại Model nào sở hữu bình luận.
+
+Để có thể nhìn trực quan dữ liệu, chúng ta có thể tạo 1 `CommentController` có phương thức `getParentModelOfComment` để lấy ra Model cha của bình luận
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Comment;
+use Illuminate\Http\Request;
+
+class CommentController extends Controller
+{
+    public function getParentModelOfComment(Request $request) {
+        $comment = Comment::find(1);
+        $commentable = $comment->commentable;
+        return $commentable;
+    }
+}
+```
+
+Tiếp theo, ta định nghĩa 1 route để có thể truy cập thông qua trình duyệt
+```php
+// routes/web.php
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CommentController;
+
+Route::get('/comments/{id}/parent-model', [CommentController::class, 'getParentModelOfComment']);
+```
+
+Tiếp theo ta truy cập vào đường dẫn `{domain}/comments/1/parent-model` để lấy ra parent model của bình luận đó
+![image](./images_tutorial/get-parent-model-of-comment.png)
